@@ -161,7 +161,7 @@
 			border-radius: 0;
 			font-size: 1.2rem;
 			font-weight: 600;
-			font-family: 'Cinzel', serif';
+			font-family: 'Cinzel', serif;
 			cursor: pointer;
 			transition: all 0.3s ease;
 			display: block;
@@ -239,7 +239,7 @@
 			font-size: 0.9rem;
 			color: #b8860b;
 			font-weight: 600;
-			text-transform: uppercase.
+			text-transform: uppercase;
 		}
 		
 		.round-number {
@@ -1710,7 +1710,7 @@
 			}
 			
 			if (gameState.activeAbilities.includes(heroNumber)) {
-				showGameNotice(`${cardDatabase[heroNumber].name]'s ability is already active!`);
+				showGameNotice(`${cardDatabase[heroNumber].name}'s ability is already active!`);
 				return;
 			}
 			
@@ -1731,7 +1731,7 @@
 			addAbility(heroNumber, hero.ability, false);
 			
 			if (heroNumber === 22) {
-				showDrawCardDialog(`${cardDatabase[heroNumber].name}'s ability activated! Draw 1 extra card.`, heroNumber);
+				showDrawCardDialog(`${cardDatabase[heroNumber].name}'s ability activated! Draw 1 extra card`, heroNumber);
 			} else if (heroNumber === 24) {
 				showGollumDiscardDialog();
 			} else {
