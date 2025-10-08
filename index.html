@@ -161,7 +161,7 @@
 			border-radius: 0;
 			font-size: 1.2rem;
 			font-weight: 600;
-			font-family: 'Cinzel', serif;
+			font-family: 'Cinzel', serif';
 			cursor: pointer;
 			transition: all 0.3s ease;
 			display: block;
@@ -867,11 +867,88 @@
 			33: { type: 'way', cost: { white: 2, blue: 2 }, password: 'hmannetjezvhivvhjbddkjveg', condition: 'Legolas must be in the party' },
 			34: { type: 'way', cost: { white: 4 }, password: 'ceeborn', condition: 'Legolas must be in the party' }
 		};
+
+		// ---- Persistence helpers ----
+		const STORAGE_KEY = 'quest-progress-v1';
+
+		function getCurrentScreen() {
+			const quest = !document.getElementById('questScreen').classList.contains('hidden');
+			if (quest) return 'quest';
+			const rules = !document.getElementById('rules').classList.contains('hidden');
+			if (rules) return 'rules';
+			return 'intro';
+		}
+
+		function saveProgress() {
+			try {
+				const payload = {
+					gameState,
+					currentRule,
+					screen: getCurrentScreen()
+				};
+				localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+			} catch (e) {}
+		}
+
+		function restoreProgress() {
+			try {
+				const raw = localStorage.getItem(STORAGE_KEY);
+				if (!raw) return false;
+				const data = JSON.parse(raw);
+				if (!data || !data.gameState) return false;
+
+				gameState = data.gameState;
+				currentRule = data.currentRule || 1;
+
+				document.getElementById('intro').classList.add('hidden');
+				document.getElementById('rules').classList.add('hidden');
+				document.getElementById('gameStart').classList.add('hidden');
+				document.getElementById('questScreen').classList.add('hidden');
+
+				if (data.screen === 'quest') {
+					document.getElementById('questScreen').classList.remove('hidden');
+					updateManaDisplay();
+					updateWayReductionAbilityUI();
+					const abilitiesContainer = document.getElementById('abilitiesContainer');
+					if (abilitiesContainer) {
+						abilitiesContainer.innerHTML = '';
+						gameState.activeHeroes.forEach(heroNumber => {
+							const hero = cardDatabase[heroNumber];
+							addAbility(heroNumber, hero.ability, false);
+						});
+					}
+					displayGameBoard();
+				} else if (data.screen === 'rules') {
+					document.getElementById('rules').classList.remove('hidden');
+					['rule1','rule2','rule3','gameStart'].forEach(id => document.getElementById(id).classList.add('hidden'));
+					const ruleId = currentRule >= 1 && currentRule <= 3 ? `rule${currentRule}` : 'rule1';
+					document.getElementById(ruleId).classList.remove('hidden');
+				} else {
+					document.getElementById('intro').classList.remove('hidden');
+				}
+				return true;
+			} catch {
+				return false;
+			}
+		}
+
+		function clearProgress() {
+			try { localStorage.removeItem(STORAGE_KEY); } catch {}
+		}
+
+		window.addEventListener('DOMContentLoaded', () => {
+			restoreProgress();
+		});
+
+		window.addEventListener('beforeunload', () => {
+			saveProgress();
+		});
 		
 		function showRules() {
 			document.getElementById('intro').classList.add('hidden');
 			document.getElementById('rules').classList.remove('hidden');
 			document.getElementById('rules').classList.add('fade-in');
+			saveProgress();
 		}
 		
 		function nextRule() {
@@ -879,12 +956,14 @@
 			currentRule++;
 			document.getElementById('rule' + currentRule).classList.remove('hidden');
 			document.getElementById('rule' + currentRule).classList.add('fade-in');
+			saveProgress();
 		}
 		
 		function showQuestStart() {
 			document.getElementById('rule3').classList.add('hidden');
 			document.getElementById('gameStart').classList.remove('hidden');
 			document.getElementById('gameStart').classList.add('fade-in');
+			saveProgress();
 		}
 		
 		function startQuest() {
@@ -892,6 +971,7 @@
 			document.getElementById('questScreen').classList.remove('hidden');
 			document.getElementById('questScreen').classList.add('fade-in');
 			initializeGame();
+			saveProgress();
 		}
 		
 		function initializeGame() {
@@ -943,6 +1023,7 @@
 			}
 			const hero = cardDatabase[heroNumber];
 			addAbility(heroNumber, hero.ability, true);
+			saveProgress();
 			showDeckShuffle();
 		}
 		
@@ -1083,6 +1164,7 @@
 			`;
 			updateManaDisplay();
 			updateWayReductionAbilityUI();
+			saveProgress();
 		}
 		
 		function formatCardCost(cost) {
@@ -1951,7 +2033,6 @@
         function endTurn() {
             gameState.currentRound++;
 
-			// Reset mana at end of turn (no carryover)
 			gameState.mana.white = 0;
 			gameState.mana.red = 0;
 			gameState.mana.blue = 0;
@@ -1973,6 +2054,8 @@
 			updateWayReductionAbilityUI();
             
             updateManaDisplay();
+
+			saveProgress();
 
 			const exiled = exileRandomWayCard();
 			if (exiled !== null) {
